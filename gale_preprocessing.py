@@ -147,17 +147,6 @@ def kmeans_inertia(df: pd.DataFrame, max_clusters=10,
 def load_dataset(filename: str) -> pd.DataFrame:
     df = pd.read_csv(filename)
 
-    int_columns = df.select_dtypes('int64')
-    float_columns = df.select_dtypes('float64')
-    object_columns = df.select_dtypes('object')
-
-    # print('=== DataFrame Int Columns ===')
-    # print(int_columns)
-    # print('=== DataFrame Float Columns ===')
-    # print(float_columns)
-    # print('=== DataFrame Object Columns ===')
-    # print(object_columns)
-
     return df
 
 
@@ -196,10 +185,11 @@ def standardize_data(df: pd.DataFrame) -> pd.DataFrame:
     return standardized_df
 
 
-def viz_barplot(x, y, title='', x_label=None, y_label=None):
+def viz_barplot(x, y, title='', x_label=None, y_label=None, x_rotation=None):
     plt.bar(x, y)
     plt.xlabel(x_label)
     plt.ylabel(y_label)
+    plt.xticks(rotation=x_rotation)
     plt.title(title)
     plt.show()
 
@@ -306,7 +296,16 @@ def main() -> None:
     
     viz_barplot(df_master['CountryCode'].value_counts().index,
                 df_master['CountryCode'].value_counts().values,
-                title='Country Distribution')
+                title='Country Distribution', x_rotation=80)
+    
+    questions = list(df_master['question_label'].unique())
+    for question in questions:
+        viz_barplot(df_master[df_master['question_label'] == \
+                             question]['subset'].value_counts().index,
+                   df_master[df_master['question_label'] == \
+                             question]['subset'].value_counts().values,
+                   title=question)
+    
     
     df_master = dummy_transformation(df_master, dummy_columns)
     print(df_master.head())
