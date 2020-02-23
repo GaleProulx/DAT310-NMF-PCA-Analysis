@@ -22,6 +22,7 @@ from sklearn.manifold import TSNE
 from sklearn.preprocessing import StandardScaler
 
 import matplotlib.pyplot as plt
+import matplotlib.ticker as mtick
 import numpy as np
 import os
 import pandas as pd
@@ -34,9 +35,10 @@ pd.set_option('display.width', 100)
 # ############################################################################
 # FUNCTIONS
 # ############################################################################
-def correlation_matrix(df: pd.DataFrame):
+def correlation_matrix(df: pd.DataFrame, annotate=False):
     corr_matrix = df.corr()
-    sn.heatmap(corr_matrix, annot=True, cmap="YlGnBu")
+    print(corr_matrix)
+    sn.heatmap(corr_matrix, annot=annotate, cmap="YlGnBu")
     plt.show()
 
 
@@ -70,7 +72,7 @@ def decorrelate_data(df: pd.DataFrame, num_components=None) \
 def dummy_transformation(df: pd.DataFrame, dummy_cols: list) -> pd.DataFrame:
     for col in dummy_cols:
         dummy = pd.get_dummies(df[col])
-        dummy = dummy.iloc[:, :-1]
+        # dummy = dummy.iloc[:, :-1]
         df.drop(columns=col, inplace=True)
         df = df.join(dummy)
 
@@ -185,12 +187,16 @@ def standardize_data(df: pd.DataFrame) -> pd.DataFrame:
     return standardized_df
 
 
-def viz_barplot(x, y, title='', x_label=None, y_label=None, x_rotation=None):
-    plt.bar(x, y)
-    plt.xlabel(x_label)
-    plt.ylabel(y_label)
+def viz_barplot(x, y, title='', x_label=None, y_label=None, x_rotation=None,
+                percentage=False):
+    fig, ax = plt.subplots()
+    ax.bar(x, y)
+    ax.set_xlabel(x_label)
+    ax.set_ylabel(y_label)
+    ax.set_title(title)
+    if percentage:
+        ax.yaxis.set_major_formatter(mtick.PercentFormatter())
     plt.xticks(rotation=x_rotation)
-    plt.title(title)
     plt.show()
 
 
@@ -263,9 +269,9 @@ def main() -> None:
         'CountryCode', 'subset', 'question_code', 'question_label', 'answer',
         'percentage', 'notes'    
     ]
-    
+        
     dummy_columns = [
-        'CountryCode', 'subset'    
+        'CountryCode', 'subset'
     ]
     
     # Combine files into one dataframe.
@@ -278,6 +284,9 @@ def main() -> None:
               str(len(df_survey.question_code.unique())))
         
         unique_questions += len(df_survey.question_code.unique())
+        
+    # Grab subset list for later use.
+    subsets = list(df_master['subset'].unique())
      
     # Double check to see if any code values overlap.
     print('Total Unique Codes: ' + str(unique_questions))
@@ -290,26 +299,36 @@ def main() -> None:
     
     # Look at distributions.
     print('\nChecking demographic distributions...')
+    participation_in_quest = (
+        df_master['subset'].value_counts().values / 
+        max(df_master['subset'].value_counts().values)
+    ) * 100
     viz_barplot(df_master['subset'].value_counts().index,
-                df_master['subset'].value_counts().values,
-                title='LGBTQ Identity')
+                participation_in_quest,
+                title='LGBTQ Identity Distribution',
+                y_label='Participation in Questions',
+                x_rotation=45, percentage=True)
     
+    participation_in_quest = (
+        df_master['CountryCode'].value_counts().values / 
+        max(df_master['CountryCode'].value_counts().values)
+    ) * 100
     viz_barplot(df_master['CountryCode'].value_counts().index,
-                df_master['CountryCode'].value_counts().values,
-                title='Country Distribution', x_rotation=80)
+                participation_in_quest,
+                title='Country Distribution', x_rotation=90, percentage=True,
+                y_label='Participation in Questions')
     
     questions = list(df_master['question_label'].unique())
-    for question in questions:
-        viz_barplot(df_master[df_master['question_label'] == \
-                             question]['subset'].value_counts().index,
-                   df_master[df_master['question_label'] == \
-                             question]['subset'].value_counts().values,
-                   title=question)
-    
-    
+    # for question in questions:
+    #     viz_barplot(df_master[df_master['question_label'] == \
+    #                           question]['CountryCode'].value_counts().index,
+    #                 df_master[df_master['question_label'] == \
+    #                           question]['CountryCode'].value_counts().values,
+    #                 title=question, x_rotation=90, 
+    #                 y_label='Number of Responses')
+
+
     df_master = dummy_transformation(df_master, dummy_columns)
-    print(df_master.head())
-    
-    
+
 if __name__ == "__main__":
     main()
