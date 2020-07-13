@@ -1,4 +1,4 @@
-# Author: Garrett Powell & Gale Proulx
+# Author: Wren Powell & Gale Proulx
 # Class:  DAT-410-01
 # Certification of Authenticity:
 # I certify that this is my work and the DAT-410 class work,
